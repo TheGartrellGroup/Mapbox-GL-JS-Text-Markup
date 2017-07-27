@@ -82,17 +82,19 @@ map.addControl(new LayerTree({
 
 
 var mapCanvas = map.getCanvasContainer();
+var textSizes = [8, 12, 16];
+var textColors = ['#000', '#C39BD3', '#76D7C4', '#DC7633'];
+
 
 function activateTool(el) {
     if (el.getAttribute('active') === 'true') {
         el.setAttribute('active', false);
         mapCanvas.style.cursor = '';
     } else {
-        var editNode = document.getElementById('editText');
+        var editNode = document.getElementById('editTool');
         var textNode = document.getElementById('textTool');
 
         el.isEqualNode(editNode) ? textNode.setAttribute('active', false) : editNode.setAttribute('active', false);
-
         el.setAttribute('active', true);
 
         mapCanvas.style.cursor = 'crosshair';
@@ -106,10 +108,14 @@ function generateTextID() {
   });
 }
 
-function markerToSymbol() {
+function markerToSymbol(e) {
     if (this.innerText !== '' && this.innerText.length > 0) {
+        this.classList.remove('active');
 
+        var fontSize = this.style['font-size'] === '' ? textSizes[1] : parseInt(this.style['font-size'].split('px')[0]);
+        var fontColor = this.style.color === '' ? '#000' : this.style.color;
         var coords = [this.getAttribute('lng'), this.getAttribute('lat')];
+
         var gj = {
           "type": "FeatureCollection",
           "features": [
@@ -135,11 +141,11 @@ function markerToSymbol() {
             "source": id,
             "layout": {
                 "text-field": this.innerText,
-                "text-size": 12,
+                "text-size": fontSize,
                 "symbol-placement": "point"
             },
             "paint": {
-                "text-color": '#333333',
+                "text-color": fontColor,
                 "text-halo-color": 'white',
                 "text-halo-width": 2,
             },
@@ -168,11 +174,64 @@ function handlePaste(e) {
     this.innerText = pastedData;
 }
 
+function createMarker(e, el) {
+    new mapboxgl.Marker(el, {
+            offset:[-75, -15] //first item in offset is half the width of marker width - defined in css
+        })
+        .setLngLat(e.lngLat)
+        .addTo(map);
+}
+
+function populatePalette() {
+    var palette = document.getElementById('customTextPalette');
+    var textSizeDiv = document.getElementById('customTextSize');
+    var textColorDiv = document.getElementById('customTextColor');
+
+    for (var s = 0; s < textSizes.length; s++) {
+        var sElm = document.createElement('div');
+        sElm.className = 'font-size-change';
+        sElm.id = 'font-' + textSizes[s];
+        sElm.innerText = 'T'; //change to whatever font/image
+        sElm.style['font-size'] = textSizes[s] + 'px';
+        sElm.addEventListener('mousedown', changeFontStyle);
+
+        textSizeDiv.appendChild(sElm);
+    };
+
+    for (var c = 0; c < textColors.length; c++) {
+        var cElm = document.createElement('div');
+        cElm.className = 'font-color-change';
+        cElm.id = 'font-' + textColors[c];
+        cElm.style['background-color'] = textColors[c];
+        cElm.addEventListener('mousedown', changeFontStyle);
+
+        textColorDiv.appendChild(cElm);
+    };
+}
+
+function changeFontStyle(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    var mark = document.querySelector('.label-marker');
+
+    if (mark) {
+        mark.classList.add('active');
+        if (e.target.classList.contains('font-size-change')) {
+            mark.style['font-size'] = e.target.style['font-size'];
+        } else if (e.target.classList.contains('font-color-change')) {
+            mark.style.color = e.target.style['background-color'];
+        }
+
+    }
+}
+
+populatePalette();
+
 map.on('click', function(e) {
     e.originalEvent.preventDefault();
 
     var textToolBtn = document.getElementById('textTool');
-    var editTextBtn = document.getElementById('editText');
+    var editTextBtn = document.getElementById('editTool');
 
     var clickBBox = [[e.point.x - 3, e.point.y - 3], [e.point.x + 3, e.point.y + 3]];
 
@@ -186,11 +245,7 @@ map.on('click', function(e) {
         el.setAttribute('lng', e.lngLat.lng);
         el.setAttribute('lat', e.lngLat.lat);
 
-        var marker = new mapboxgl.Marker(el, {
-            offset:[-75, -15] //first item in offset is half the width of marker width - defined in css
-        })
-        .setLngLat(e.lngLat)
-        .addTo(map);
+        var marker = createMarker(e, el);
 
         el.addEventListener("blur", markerToSymbol);
         el.addEventListener("keydown", limitTextLength);
@@ -199,6 +254,7 @@ map.on('click', function(e) {
         el.focus();
 
     } else if (editTextBtn.getAttribute('active') === 'true') {
+
         function isCustomText(item) {
             return item.layer.id.indexOf('-custom-text-label') > -1
         }
@@ -208,6 +264,7 @@ map.on('click', function(e) {
         if (features.length) {
             var customLabels = features.filter(isCustomText);
             if (customLabels.length) {
+
                 //only returning the first feature
                 //user is going to have to zoom in further
                 var feature = customLabels[0].layer;
@@ -215,6 +272,8 @@ map.on('click', function(e) {
                 var lyrID = feature.id;
                 var sourceID = feature.source;
                 var text = feature.layout['text-field'];
+                var featureFontSize = feature.layout['text-size'] + 'px';
+                var featureFontColor = feature.paint['text-color'];
 
                 var mapSource = map.getSource(sourceID);
                 var coords = mapSource._data.features[0].geometry.coordinates;
@@ -227,16 +286,17 @@ map.on('click', function(e) {
                 el.setAttribute('spellcheck', 'false');
                 el.setAttribute('lng', coords[0]);
                 el.setAttribute('lat', coords[1]);
+                el.style['font-size'] = featureFontSize;
+                el.style.color = featureFontColor;
+
+                var palette = document.getElementById('customTextPalette');
+                palette.style.display = 'block';
 
                 //gl-js throws a z-index error if a marker is created directly after removing a layer
                 //so just hide the layer for now - we'll remove it shortly in a few more steps
                 map.setLayoutProperty(lyrID, 'visibility', 'none');
 
-                var marker = new mapboxgl.Marker(el, {
-                    offset:[-75, -15]
-                })
-                .setLngLat(coords)
-                .addTo(map);
+                var marker = createMarker(e, el);
 
                 el.addEventListener("blur", markerToSymbol);
                 el.addEventListener("keydown", limitTextLength);
@@ -246,6 +306,7 @@ map.on('click', function(e) {
 
                 map.removeSource(sourceID);
                 map.removeLayer(lyrID);
+
             }
         }
     }

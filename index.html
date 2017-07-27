@@ -41,6 +41,7 @@
         }
 
         .label-marker:active,
+        .label-marker.active,
         .label-marker:focus {
             background-color: rgba(255,255,255,0.5);
             outline: none !important;
@@ -52,23 +53,51 @@
         }
 
         #textTool[active='true'],
-        #editText[active='true'] {
+        #editTool[active='true'] {
             background-color: #f69191;
         }
 
-        #editText {
+        #editTool {
             top: 45px;
             left: 10px;
         }
 
-        #textTool, #editText {
+        #textTool, #editTool, #customTextPalette {
             background: #fff;
             position: absolute;
             z-index: 1;
             border-radius: 3px;
-            width: 120px;
             border: 1px solid rgba(0,0,0,0.4);
             font-family: 'Open Sans', sans-serif;
+        }
+
+        #textTool, #editTool {
+            width: 120px;
+        }
+
+        #customTextPalette {
+            /*display: none;*/
+            top: 85px;
+            left: 10px;
+            padding: 5px;
+        }
+
+        .font-size-change, .font-color-change {
+            display: inline-block;
+        }
+
+        .font-size-change:hover, .font-color-change:hover {
+            cursor: pointer !important;
+        }
+
+        .font-size-change {
+            padding: 0 5px 0 5px;
+        }
+
+        .font-color-change {
+            height: 15px;
+            width: 15px;
+            margin: 0 5px 0 5px;
         }
 
 
@@ -78,7 +107,11 @@
 
 <div id='map'></div>
 <button id="textTool" active='false' onclick="activateTool(this)">Add Text</button>
-<button id="editText" active='false' onclick="activateTool(this)">Edit Text</button>
+<button id="editTool" active='false' onclick="activateTool(this)">Edit Text</button>
+<div id='customTextPalette'>
+    <div id='customTextSize'>Font Size:</div>
+    <div id='customTextColor'>Colors:</div>
+</div>
 
 <script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v0.16.0/mapbox-gl-draw.js'></script>
 <script src='https://rawgit.com/TheGartrellGroup/Mapbox-GL-JS-Layer-Tree/master/dist/js/scripts.min.js'></script>
