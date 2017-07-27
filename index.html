@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title></title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.38.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.38.0/mapbox-gl.css' rel='stylesheet' />
+    <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v0.16.0/mapbox-gl-draw.css' type='text/css' />
+    <link href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css' rel='stylesheet' />
+    <link href='https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css' rel='stylesheet' />
+    <link href='https://rawgit.com/TheGartrellGroup/Mapbox-GL-JS-Layer-Tree/master/dist/css/styles.min.css' rel='stylesheet' />
+
+    <style>
+        body {
+            margin:0; padding:0;
+        }
+
+        #map {
+            position:absolute;
+            top:0;
+            bottom:0;
+            width:100%;
+        }
+
+        .label-marker {
+            display: block;
+            position: relative;
+            min-height: 20px;
+            width: 150px;
+            padding: 5px;
+            border-radius: 3px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            text-align: center;
+            background-color: transparent;
+            -webkit-appearance: textarea;
+            -moz-appearance:    textarea;
+            appearance:         textarea;
+        }
+
+        .label-marker:active,
+        .label-marker:focus {
+            background-color: rgba(255,255,255,0.5);
+            outline: none !important;
+        }
+
+        #textTool {
+            top: 10px;
+            left: 10px;
+        }
+
+        #textTool[active='true'],
+        #editText[active='true'] {
+            background-color: #f69191;
+        }
+
+        #editText {
+            top: 45px;
+            left: 10px;
+        }
+
+        #textTool, #editText {
+            background: #fff;
+            position: absolute;
+            z-index: 1;
+            border-radius: 3px;
+            width: 120px;
+            border: 1px solid rgba(0,0,0,0.4);
+            font-family: 'Open Sans', sans-serif;
+        }
+
+
+    </style>
+</head>
+<body>
+
+<div id='map'></div>
+<button id="textTool" active='false' onclick="activateTool(this)">Add Text</button>
+<button id="editText" active='false' onclick="activateTool(this)">Edit Text</button>
+
+<script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v0.16.0/mapbox-gl-draw.js'></script>
+<script src='https://rawgit.com/TheGartrellGroup/Mapbox-GL-JS-Layer-Tree/master/dist/js/scripts.min.js'></script>
+<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js'></script>
+<script src="app.js"></script>
+
+</body>
+</html>
+
