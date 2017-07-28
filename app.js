@@ -82,8 +82,11 @@ map.addControl(new LayerTree({
 
 
 var mapCanvas = map.getCanvasContainer();
-var textSizes = [8, 12, 16];
+
+//set user defined sizes/colors in palette
+var textSizes = [10, 14, 18];
 var textColors = ['#000', '#C39BD3', '#76D7C4', '#DC7633'];
+var isDragging = false;
 
 
 function activateTool(el) {
@@ -101,6 +104,7 @@ function activateTool(el) {
     }
 }
 
+//generate unique layer ids for text-labels
 function generateTextID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
@@ -108,13 +112,20 @@ function generateTextID() {
   });
 }
 
-function markerToSymbol(e) {
-    if (this.innerText !== '' && this.innerText.length > 0) {
-        this.classList.remove('active');
+//convert marker DOM elements to symbol layers
+function markerToSymbol(e, elm) {
+    if (isDragging) return;
 
-        var fontSize = this.style['font-size'] === '' ? textSizes[1] : parseInt(this.style['font-size'].split('px')[0]);
-        var fontColor = this.style.color === '' ? '#000' : this.style.color;
-        var coords = [this.getAttribute('lng'), this.getAttribute('lat')];
+    e.hasOwnProperty('originalEvent') ? e.originalEvent.stopImmediatePropagation() : e.stopImmediatePropagation();
+
+    var that = this instanceof Element ? this : elm;
+
+    if (that.innerText !== '' && that.innerText.length > 0) {
+        that.classList.remove('active');
+
+        var fontSize = that.style['font-size'] === '' ? textSizes[1] : parseInt(that.style['font-size'].split('px')[0]); //textSize[1] is default
+        var fontColor = that.style.color === '' ? '#000' : that.style.color;
+        var coords = [that.getAttribute('lng'), that.getAttribute('lat')];
 
         var gj = {
           "type": "FeatureCollection",
@@ -140,7 +151,7 @@ function markerToSymbol(e) {
             "type": "symbol",
             "source": id,
             "layout": {
-                "text-field": this.innerText,
+                "text-field": that.innerText,
                 "text-size": fontSize,
                 "symbol-placement": "point"
             },
@@ -152,20 +163,22 @@ function markerToSymbol(e) {
         });
     }
 
-    this.remove();
+    that.remove();
 }
 
+//label text limit defined
 function limitTextLength(e) {
     if (this.innerText.length >= 20 && e.keyCode !== 8) {
         e.preventDefault();
     }
 }
 
-//pasting text requires additional handling
+//pasting text into requires additional handling
+//for text limit
 function handlePaste(e) {
     var clipboardData, pastedData;
 
-    e.stopPropagation();
+    e.stopImmediatePropagation();
     e.preventDefault();
 
     clipboardData = e.clipboardData || window.clipboardData;
@@ -176,12 +189,13 @@ function handlePaste(e) {
 
 function createMarker(e, el) {
     new mapboxgl.Marker(el, {
-            offset:[-75, -15] //first item in offset is half the width of marker width - defined in css
+            offset:[-75, -15] //first item in offset is half the width of marker width (defined in css)
         })
         .setLngLat(e.lngLat)
         .addTo(map);
 }
 
+//populates edit palette with user defined colors/sizes
 function populatePalette() {
     var palette = document.getElementById('customTextPalette');
     var textSizeDiv = document.getElementById('customTextSize');
@@ -209,9 +223,10 @@ function populatePalette() {
     };
 }
 
+//update marker font styles
 function changeFontStyle(e) {
-    e.stopPropagation();
-    e.preventDefault();
+    e.stopImmediatePropagation();
+
     var mark = document.querySelector('.label-marker');
 
     if (mark) {
@@ -223,6 +238,54 @@ function changeFontStyle(e) {
         }
 
     }
+}
+
+//marker move functionality - modified GL example
+//https://www.mapbox.com/mapbox-gl-js/example/drag-a-point/
+function beginDrag(e) {
+    e.stopImmediatePropagation();
+
+    var mark = this;
+    isDragging = true;
+
+    map.dragPan.disable();
+    mapCanvas.style.cursor = 'grab';
+
+    map.on('mousemove', onDrag);
+    map.once('mouseup', stopDrag);
+}
+
+function onDrag(e) {
+    e.originalEvent.stopImmediatePropagation();
+
+    if (!isDragging) return;
+
+    mapCanvas.style.cursor = 'grabbing';
+    map.dragPan.disable();
+
+    var label = document.querySelector('.label-marker');
+
+    createMarker(e, label);
+}
+
+function stopDrag(e) {
+    if (!isDragging) return;
+
+    isDragging = false;
+
+    var label = document.querySelector('.label-marker');
+    label.setAttribute('lng', e.lngLat.lng);
+    label.setAttribute('lat', e.lngLat.lat);
+
+    markerToSymbol(e, label);
+
+    mapCanvas.style.cursor = '';
+    map.dragPan.enable();
+
+    // Unbind mouse events
+    map.off('mousemove', onDrag);
+
+
 }
 
 populatePalette();
@@ -244,8 +307,9 @@ map.on('click', function(e) {
         el.setAttribute('spellcheck', 'false');
         el.setAttribute('lng', e.lngLat.lng);
         el.setAttribute('lat', e.lngLat.lat);
+        el.style['font-size'] = textSizes[1] + 'px';
 
-        var marker = createMarker(e, el);
+        map.marker = createMarker(e, el);
 
         el.addEventListener("blur", markerToSymbol);
         el.addEventListener("keydown", limitTextLength);
@@ -255,6 +319,7 @@ map.on('click', function(e) {
 
     } else if (editTextBtn.getAttribute('active') === 'true') {
 
+        //filters layers for custom text labels
         function isCustomText(item) {
             return item.layer.id.indexOf('-custom-text-label') > -1
         }
@@ -263,8 +328,8 @@ map.on('click', function(e) {
 
         if (features.length) {
             var customLabels = features.filter(isCustomText);
-            if (customLabels.length) {
 
+            if (customLabels.length) {
                 //only returning the first feature
                 //user is going to have to zoom in further
                 var feature = customLabels[0].layer;
@@ -289,27 +354,25 @@ map.on('click', function(e) {
                 el.style['font-size'] = featureFontSize;
                 el.style.color = featureFontColor;
 
-                var palette = document.getElementById('customTextPalette');
-                palette.style.display = 'block';
-
                 //gl-js throws a z-index error if a marker is created directly after removing a layer
                 //so just hide the layer for now - we'll remove it shortly in a few more steps
                 map.setLayoutProperty(lyrID, 'visibility', 'none');
 
-                var marker = createMarker(e, el);
+                map.marker = createMarker(e, el);
 
                 el.addEventListener("blur", markerToSymbol);
                 el.addEventListener("keydown", limitTextLength);
                 el.addEventListener("paste", handlePaste);
+                el.addEventListener("mousedown", beginDrag);
 
                 el.focus();
 
                 map.removeSource(sourceID);
                 map.removeLayer(lyrID);
 
+                e.originalEvent.stopImmediatePropagation();
+
             }
         }
     }
 })
-
-

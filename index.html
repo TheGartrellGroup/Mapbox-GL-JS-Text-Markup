@@ -13,14 +13,15 @@
 
     <style>
         body {
-            margin:0; padding:0;
+            margin:0;
+            padding:0;
         }
 
         #map {
-            position:absolute;
-            top:0;
-            bottom:0;
-            width:100%;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
         }
 
         .label-marker {
@@ -43,8 +44,13 @@
         .label-marker:active,
         .label-marker.active,
         .label-marker:focus {
-            background-color: rgba(255,255,255,0.5);
+            background-color: rgba(255,255,255,0.25);
             outline: none !important;
+        }
+
+        .label-marker-container {
+            background-color: rgba(255,255,255,0.5);
+            border-style: dashed;
         }
 
         #textTool {
@@ -97,6 +103,7 @@
         .font-color-change {
             height: 15px;
             width: 15px;
+            border-radius: 3px;
             margin: 0 5px 0 5px;
         }
 
