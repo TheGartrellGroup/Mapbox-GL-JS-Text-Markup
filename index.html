@@ -10,7 +10,6 @@
     <link href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css' rel='stylesheet' />
     <link href='https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css' rel='stylesheet' />
     <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel='stylesheet' />
-    <link href='https://rawgit.com/TheGartrellGroup/Mapbox-GL-JS-Layer-Tree/master/dist/css/styles.min.css' rel='stylesheet' />
 
     <style>
         body {
@@ -48,10 +47,15 @@
 
         .label-marker.active,
         .label-marker:focus,
-
-        .label-marker.label-container span:active,
-        .label-marker.label-container span:focus {
+        .label-marker.label-container.active {
             background-color: rgba(255,255,255,0.25);
+        }
+
+        .label-marker.active,
+        .label-marker:focus,
+        .label-marker.label-container.active,
+        .label-marker.label-container .marker-text-child:active,
+        .label-marker.label-container .marker-text-child:focus {
             outline: none !important;
         }
 
@@ -122,9 +126,6 @@
     <div id='customTextColor'>Colors:</div>
 </div>
 
-<script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v0.16.0/mapbox-gl-draw.js'></script>
-<script src='https://rawgit.com/TheGartrellGroup/Mapbox-GL-JS-Layer-Tree/master/dist/js/scripts.min.js'></script>
-<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js'></script>
 <script src="app.js"></script>
 
 </body>

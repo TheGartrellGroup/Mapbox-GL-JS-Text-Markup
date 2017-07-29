@@ -2,7 +2,7 @@ mapboxgl.accessToken = '';
 
 var map = new mapboxgl.Map({
     container: 'map',
-    style: 'mapbox://styles/mapbox/light-v9',
+    style: 'mapbox://styles/mapbox/dark-v9',
     center: [-75, 15],
     zoom: 2
 });
@@ -49,47 +49,22 @@ map.on('load', function() {
             "line-dasharray": [2, 2],
         }
     });
-
-
 })
-
-
-var layers =
-
-    [{
-        'name': 'Geographic Regions',
-        'id': 'geo-regions',
-        'source': 'geo-regions',
-        'directory': 'Directory',
-    }, {
-        'name': 'Land',
-        'id': 'land',
-        'source': 'land',
-        'directory': 'Directory',
-    }, {
-        'name': 'Boundary Lines',
-        'id': 'boundary-line',
-        'source': 'boundary',
-        'directory': 'Directory',
-    }];
 
 
 // Add zoom and rotation controls to the map.
 map.addControl(new mapboxgl.NavigationControl());
-map.addControl(new LayerTree({
-    layers: layers
-}), 'bottom-left');
 
-
-var mapCanvas = map.getCanvasContainer();
+var MAP_DIV = map.getCanvasContainer();
+var EDIT_NODE = document.getElementById('editTextTool');
+var LABEL_NODE = document.getElementById('textTool');
 
 //set user defined sizes/colors in palette
 var TEXT_SIZES = [10, 14, 18];
 var TEXT_COLORS = ['#000', '#C39BD3', '#76D7C4', '#DC7633'];
 
-//text tools
-var EDITNODE = document.getElementById('editTextTool');
-var TEXTNODE = document.getElementById('textTool');
+//char count limit
+var CHAR_LIMIT = 20;
 
 //label width
 var LABEL_WIDTH = '170px';
@@ -97,17 +72,18 @@ var LABEL_WIDTH = '170px';
 //drag status
 var isDragging = false;
 
+
 function activateTool(el) {
     if (el.getAttribute('active') === 'true') {
         el.setAttribute('active', false);
 
-        mapCanvas.style.cursor = '';
+        MAP_DIV.style.cursor = '';
 
     } else {
-        el.isEqualNode(EDITNODE) ? TEXTNODE.setAttribute('active', false) : EDITNODE.setAttribute('active', false);
+        el.isEqualNode(EDIT_NODE) ? LABEL_NODE.setAttribute('active', false) : EDIT_NODE.setAttribute('active', false);
         el.setAttribute('active', true);
 
-        mapCanvas.style.cursor = 'crosshair';
+        MAP_DIV.style.cursor = 'crosshair';
     }
 }
 
@@ -123,7 +99,7 @@ function generateTextID() {
 function markerToSymbol(e, elm) {
     if (isDragging) return;
 
-    mapCanvas.style.curor = '';
+    MAP_DIV.style.curor = '';
 
     var that = this instanceof Element ? this : elm;
     var childSpan = document.querySelector('.marker-text-child');
@@ -163,17 +139,18 @@ function markerToSymbol(e, elm) {
             "layout": {
                 "text-field": that.innerText,
                 "text-size": fontSize,
-                "symbol-placement": "point"
+                "symbol-placement": "point",
+                "text-keep-upright": true
             },
             "paint": {
                 "text-color": fontColor,
-                "text-halo-color": 'white',
+                "text-halo-color": '#FFF',
                 "text-halo-width": 2,
             },
         });
 
         //removes text-input marker after clicking off
-        TEXTNODE.setAttribute('active', false);
+        LABEL_NODE.setAttribute('active', false);
 
         that.removeEventListener('blur', markerToSymbol);
     }
@@ -181,17 +158,20 @@ function markerToSymbol(e, elm) {
     parent ? parent.remove() : that.remove();
 }
 
-//label text limit/event keys
+//label text limit/prevent event keys
 function inputText(e) {
-    if (e.keyCode === 13 && this.innerText.length <= 20) {
+    //arrow keys
+    if ([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
+        e.stopPropagation();
+    //enter key
+    } else if(e.keyCode === 13 && this.innerText.length <= CHAR_LIMIT) {
         this.blur();
 
-        mapCanvas.style.cursor = '';
+        MAP_DIV.style.cursor = '';
 
         e.preventDefault();
-    }
-
-    if (this.innerText.length >= 20 && e.keyCode !== 8) {
+    //limit
+    } else if (this.innerText.length >= CHAR_LIMIT && e.keyCode !== 8) {
         e.preventDefault();
     }
 }
@@ -205,7 +185,7 @@ function handlePaste(e) {
     e.preventDefault();
 
     clipboardData = e.clipboardData || window.clipboardData;
-    pastedData = clipboardData.getData('text/plain').slice(0, 20);
+    pastedData = clipboardData.getData('text/plain').slice(0, CHAR_LIMIT);
 
     this.innerText = pastedData;
 }
@@ -250,10 +230,16 @@ function populatePalette() {
 
 //update marker font styles
 function changeFontStyle(e) {
-    var mark = document.querySelector('.label-marker');
+    e.preventDefault();
+    e.stopPropagation();
+
+    var labelDiv = document.querySelector('.label-marker');
+    var childSpan = document.querySelector('.marker-text-child');
+
+    var mark = childSpan ? childSpan : labelDiv;
 
     if (mark) {
-        mark.classList.add('active');
+        labelDiv.classList.add('active');
         if (e.target.classList.contains('font-size-change')) {
             mark.style['font-size'] = e.target.style['font-size'];
         } else if (e.target.classList.contains('font-color-change')) {
@@ -270,7 +256,8 @@ function beginDrag(e) {
     map.dragPan.disable();
 
     isDragging = true;
-    mapCanvas.style.cursor = 'grab';
+
+    MAP_DIV.style.cursor = 'cursor:-moz-grab;cursor:-webkit-grab;cursor:grab';
 
     map.on('mousemove', onDrag);
     map.once('mouseup', stopDrag);
@@ -279,10 +266,11 @@ function beginDrag(e) {
 function onDrag(e) {
     if (!isDragging) return;
 
-    mapCanvas.style.cursor = 'grabbing';
-    map.dragPan.disable();
-
     var label = document.querySelector('.label-marker');
+
+    MAP_DIV.style.cursor = 'cursor:-moz-grabbing;cursor:-webkit-grabbing;cursor:grabbing';
+
+    map.dragPan.disable();
 
     createMarker(e, label);
 }
@@ -290,17 +278,20 @@ function onDrag(e) {
 function stopDrag(e) {
     if (!isDragging) return;
 
-    var label = document.querySelector('.label-marker');
-    label.setAttribute('lng', e.lngLat.lng);
-    label.setAttribute('lat', e.lngLat.lat);
+    var textSpan = document.querySelector('.marker-text-child');
+
+    textSpan.setAttribute('lng', e.lngLat.lng);
+    textSpan.setAttribute('lat', e.lngLat.lat);
 
     isDragging = false;
 
-    mapCanvas.style.cursor = '';
+    textSpan.parentNode.style.cursor = '';
+    MAP_DIV.style.cursor = '';
+
     map.dragPan.enable();
 
     setTimeout(function(){
-        markerToSymbol(e, label);
+        markerToSymbol(e, textSpan);
     }, 50)
 
     // Unbind mouse events
@@ -313,19 +304,22 @@ function addEditLabels(e) {
 
     if (isDragging) return;
 
-    var clickBBox = [[e.point.x - 3, e.point.y - 3], [e.point.x + 3, e.point.y + 3]];
+    //create a large bounding box for capture
+    var clickBBox = [[e.point.x - 2, e.point.y - 2], [e.point.x + 2, e.point.y + 2]];
 
     //adding text
-    if (TEXTNODE.getAttribute('active') === 'true') {
+    if (LABEL_NODE.getAttribute('active') === 'true') {
 
         var el = document.createElement('div');
         el.className = 'label-marker';
+
         el.setAttribute('contenteditable', 'true');
         el.setAttribute('autocorrect', 'off');
         el.setAttribute('spellcheck', 'false');
         el.setAttribute('lng', e.lngLat.lng);
         el.setAttribute('lat', e.lngLat.lat);
-        el.style['font-size'] = TEXT_SIZES[1] + 'px';
+
+        el.style['font-size'] = TEXT_SIZES[1] + 'px';  //defaulting to second size
         el.style.width = LABEL_WIDTH;
 
         map.marker = createMarker(e, el);
@@ -337,7 +331,7 @@ function addEditLabels(e) {
         el.focus();
 
     //editting text
-    } else if (EDITNODE.getAttribute('active') === 'true') {
+    } else if (EDIT_NODE.getAttribute('active') === 'true') {
 
         //filters layers for custom text labels
         function isCustomText(item) {
@@ -370,8 +364,10 @@ function addEditLabels(e) {
                 var el = document.createElement('span');
                 el.className = 'marker-text-child';
                 el.innerText = text;
+
                 el.style['font-size'] = featureFontSize;
                 el.style.color = featureFontColor;
+
                 el.setAttribute('lng', coords[0]);
                 el.setAttribute('lat', coords[1]);
                 el.setAttribute('contenteditable', 'true');
@@ -397,7 +393,7 @@ function addEditLabels(e) {
                 el.addEventListener("keydown", inputText);
                 el.addEventListener("paste", handlePaste);
 
-                mapCanvas.style.cursor = 'text';
+                MAP_DIV.style.cursor = 'text';
 
                 el.focus();
 
