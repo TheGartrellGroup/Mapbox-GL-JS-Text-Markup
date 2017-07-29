@@ -9,6 +9,7 @@
     <link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v0.16.0/mapbox-gl-draw.css' type='text/css' />
     <link href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css' rel='stylesheet' />
     <link href='https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css' rel='stylesheet' />
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel='stylesheet' />
     <link href='https://rawgit.com/TheGartrellGroup/Mapbox-GL-JS-Layer-Tree/master/dist/css/styles.min.css' rel='stylesheet' />
 
     <style>
@@ -28,7 +29,6 @@
             display: block;
             position: relative;
             min-height: 20px;
-            width: 150px;
             padding: 5px;
             border-radius: 3px;
             overflow: hidden;
@@ -41,13 +41,16 @@
             appearance:         textarea;
         }
 
-        .label-marker.drag-active {
-
+        .label-marker.label-container i {
+            float: left !important;
+            cursor: move;
         }
 
-        .label-marker:active,
         .label-marker.active,
-        .label-marker:focus {
+        .label-marker:focus,
+
+        .label-marker.label-container span:active,
+        .label-marker.label-container span:focus {
             background-color: rgba(255,255,255,0.25);
             outline: none !important;
         }
@@ -58,16 +61,16 @@
         }
 
         #textTool[active='true'],
-        #editTool[active='true'] {
+        #editTextTool[active='true'] {
             background-color: #f69191;
         }
 
-        #editTool {
+        #editTextTool {
             top: 45px;
             left: 10px;
         }
 
-        #textTool, #editTool, #customTextPalette {
+        #textTool, #editTextTool, #customTextPalette {
             background: #fff;
             position: absolute;
             z-index: 1;
@@ -76,7 +79,7 @@
             font-family: 'Open Sans', sans-serif;
         }
 
-        #textTool, #editTool {
+        #textTool, #editTextTool {
             width: 120px;
         }
 
@@ -113,7 +116,7 @@
 
 <div id='map'></div>
 <button id="textTool" active='false' onclick="activateTool(this)">Add Text</button>
-<button id="editTool" active='false' onclick="activateTool(this)">Edit Text</button>
+<button id="editTextTool" active='false' onclick="activateTool(this)">Edit Text</button>
 <div id='customTextPalette'>
     <div id='customTextSize'>Font Size:</div>
     <div id='customTextColor'>Colors:</div>

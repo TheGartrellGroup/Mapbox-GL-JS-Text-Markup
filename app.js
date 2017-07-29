@@ -84,8 +84,15 @@ map.addControl(new LayerTree({
 var mapCanvas = map.getCanvasContainer();
 
 //set user defined sizes/colors in palette
-var textSizes = [10, 14, 18];
-var textColors = ['#000', '#C39BD3', '#76D7C4', '#DC7633'];
+var TEXT_SIZES = [10, 14, 18];
+var TEXT_COLORS = ['#000', '#C39BD3', '#76D7C4', '#DC7633'];
+
+//text tools
+var EDITNODE = document.getElementById('editTextTool');
+var TEXTNODE = document.getElementById('textTool');
+
+//label width
+var LABEL_WIDTH = '170px';
 
 //drag status
 var isDragging = false;
@@ -93,12 +100,11 @@ var isDragging = false;
 function activateTool(el) {
     if (el.getAttribute('active') === 'true') {
         el.setAttribute('active', false);
-        mapCanvas.style.cursor = '';
-    } else {
-        var editNode = document.getElementById('editTool');
-        var textNode = document.getElementById('textTool');
 
-        el.isEqualNode(editNode) ? textNode.setAttribute('active', false) : editNode.setAttribute('active', false);
+        mapCanvas.style.cursor = '';
+
+    } else {
+        el.isEqualNode(EDITNODE) ? TEXTNODE.setAttribute('active', false) : EDITNODE.setAttribute('active', false);
         el.setAttribute('active', true);
 
         mapCanvas.style.cursor = 'crosshair';
@@ -117,15 +123,17 @@ function generateTextID() {
 function markerToSymbol(e, elm) {
     if (isDragging) return;
 
-    e.hasOwnProperty('originalEvent') ? e.originalEvent.stopImmediatePropagation() : e.stopImmediatePropagation();
+    mapCanvas.style.curor = '';
 
     var that = this instanceof Element ? this : elm;
-    var textToolBtn = document.getElementById('textTool');
+    var childSpan = document.querySelector('.marker-text-child');
+
+    if (childSpan) var parent = childSpan.parentNode;
 
     if (that.innerText !== '' && that.innerText.length > 0) {
-        that.classList.remove('active');
+        parent ? parent.classList.remove('active') : that.classList.remove('active');
 
-        var fontSize = that.style['font-size'] === '' ? textSizes[1] : parseInt(that.style['font-size'].split('px')[0]); //textSize[1] is default
+        var fontSize = that.style['font-size'] === '' ? TEXT_SIZES[1] : parseInt(that.style['font-size'].split('px')[0]); //textSize[1] is default
         var fontColor = that.style.color === '' ? '#000' : that.style.color;
         var coords = [that.getAttribute('lng'), that.getAttribute('lat')];
 
@@ -165,18 +173,21 @@ function markerToSymbol(e, elm) {
         });
 
         //removes text-input marker after clicking off
-        textToolBtn.setAttribute('active', false);
+        TEXTNODE.setAttribute('active', false);
 
         that.removeEventListener('blur', markerToSymbol);
     }
 
-    that.remove();
+    parent ? parent.remove() : that.remove();
 }
 
-//label text limit defined
-function limitTextLength(e) {
+//label text limit/event keys
+function inputText(e) {
     if (e.keyCode === 13 && this.innerText.length <= 20) {
         this.blur();
+
+        mapCanvas.style.cursor = '';
+
         e.preventDefault();
     }
 
@@ -200,8 +211,10 @@ function handlePaste(e) {
 }
 
 function createMarker(e, el) {
+    var w = parseInt(LABEL_WIDTH.split()[0]) / -2;
+
     new mapboxgl.Marker(el, {
-            offset:[-75, -15] //first item in offset is half the width of marker width (defined in css)
+            offset:[w, -15]
         })
         .setLngLat(e.lngLat)
         .addTo(map);
@@ -213,22 +226,22 @@ function populatePalette() {
     var textSizeDiv = document.getElementById('customTextSize');
     var textColorDiv = document.getElementById('customTextColor');
 
-    for (var s = 0; s < textSizes.length; s++) {
+    for (var s = 0; s < TEXT_SIZES.length; s++) {
         var sElm = document.createElement('div');
         sElm.className = 'font-size-change';
-        sElm.id = 'font-' + textSizes[s];
+        sElm.id = 'font-' + TEXT_SIZES[s];
         sElm.innerText = 'T'; //change to whatever font/image
-        sElm.style['font-size'] = textSizes[s] + 'px';
+        sElm.style['font-size'] = TEXT_SIZES[s] + 'px';
         sElm.addEventListener('mousedown', changeFontStyle);
 
         textSizeDiv.appendChild(sElm);
     };
 
-    for (var c = 0; c < textColors.length; c++) {
+    for (var c = 0; c < TEXT_COLORS.length; c++) {
         var cElm = document.createElement('div');
         cElm.className = 'font-color-change';
-        cElm.id = 'font-' + textColors[c];
-        cElm.style['background-color'] = textColors[c];
+        cElm.id = 'font-' + TEXT_COLORS[c];
+        cElm.style['background-color'] = TEXT_COLORS[c];
         cElm.addEventListener('mousedown', changeFontStyle);
 
         textColorDiv.appendChild(cElm);
@@ -237,8 +250,6 @@ function populatePalette() {
 
 //update marker font styles
 function changeFontStyle(e) {
-    e.stopImmediatePropagation();
-
     var mark = document.querySelector('.label-marker');
 
     if (mark) {
@@ -248,7 +259,6 @@ function changeFontStyle(e) {
         } else if (e.target.classList.contains('font-color-change')) {
             mark.style.color = e.target.style['background-color'];
         }
-
     }
 }
 
@@ -257,14 +267,13 @@ function changeFontStyle(e) {
 function beginDrag(e) {
     e.stopImmediatePropagation();
 
-    var mark = this;
-    isDragging = true;
-
     map.dragPan.disable();
+
+    isDragging = true;
     mapCanvas.style.cursor = 'grab';
 
     map.on('mousemove', onDrag);
-    map.on('mouseup', stopDrag);
+    map.once('mouseup', stopDrag);
 }
 
 function onDrag(e) {
@@ -274,7 +283,6 @@ function onDrag(e) {
     map.dragPan.disable();
 
     var label = document.querySelector('.label-marker');
-    label.classList.add('drag-active');
 
     createMarker(e, label);
 }
@@ -285,7 +293,6 @@ function stopDrag(e) {
     var label = document.querySelector('.label-marker');
     label.setAttribute('lng', e.lngLat.lng);
     label.setAttribute('lat', e.lngLat.lat);
-    label.classList.remove('drag-active');
 
     isDragging = false;
 
@@ -300,43 +307,37 @@ function stopDrag(e) {
     map.off('mousemove', onDrag);
 }
 
-//fire function to populate text/color custom pallete
-populatePalette();
-
-map.on('click', function(e) {
+function addEditLabels(e) {
     e.originalEvent.preventDefault();
+    e.originalEvent.stopPropagation();
 
     if (isDragging) return;
-
-    isDragging = false;
-
-    var textToolBtn = document.getElementById('textTool');
-    var editTextBtn = document.getElementById('editTool');
 
     var clickBBox = [[e.point.x - 3, e.point.y - 3], [e.point.x + 3, e.point.y + 3]];
 
     //adding text
-    if (textToolBtn.getAttribute('active') === 'true') {
+    if (TEXTNODE.getAttribute('active') === 'true') {
 
-        var el = document.createElement('span');
+        var el = document.createElement('div');
         el.className = 'label-marker';
         el.setAttribute('contenteditable', 'true');
         el.setAttribute('autocorrect', 'off');
         el.setAttribute('spellcheck', 'false');
         el.setAttribute('lng', e.lngLat.lng);
         el.setAttribute('lat', e.lngLat.lat);
-        el.style['font-size'] = textSizes[1] + 'px';
+        el.style['font-size'] = TEXT_SIZES[1] + 'px';
+        el.style.width = LABEL_WIDTH;
 
         map.marker = createMarker(e, el);
 
         el.addEventListener("blur", markerToSymbol);
-        el.addEventListener("keydown", limitTextLength);
+        el.addEventListener("keydown", inputText);
         el.addEventListener("paste", handlePaste);
 
         el.focus();
 
     //editting text
-    } else if (editTextBtn.getAttribute('active') === 'true') {
+    } else if (EDITNODE.getAttribute('active') === 'true') {
 
         //filters layers for custom text labels
         function isCustomText(item) {
@@ -362,32 +363,50 @@ map.on('click', function(e) {
                 var mapSource = map.getSource(sourceID);
                 var coords = mapSource._data.features[0].geometry.coordinates;
 
+                var container = document.createElement('div');
+                container.className = 'label-marker label-container active';
+                container.style.width = LABEL_WIDTH;
+
                 var el = document.createElement('span');
-                el.className = 'label-marker';
+                el.className = 'marker-text-child';
                 el.innerText = text;
+                el.style['font-size'] = featureFontSize;
+                el.style.color = featureFontColor;
+                el.setAttribute('lng', coords[0]);
+                el.setAttribute('lat', coords[1]);
                 el.setAttribute('contenteditable', 'true');
                 el.setAttribute('autocorrect', 'off');
                 el.setAttribute('spellcheck', 'false');
-                el.setAttribute('lng', coords[0]);
-                el.setAttribute('lat', coords[1]);
-                el.style['font-size'] = featureFontSize;
-                el.style.color = featureFontColor;
+
+                //drag icon - using FontAwesome as an example
+                var dragUI = document.createElement('i');
+                dragUI.className = 'fa fa-arrows-alt';
+                dragUI.setAttribute('aria-hidden', true);
+
+                container.appendChild(dragUI);
+                container.appendChild(el);
 
                 map.removeSource(sourceID);
                 map.removeLayer(lyrID);
 
-                createMarker(e, el);
+                createMarker(e, container);
+
+                dragUI.addEventListener("mousedown", beginDrag);
 
                 el.addEventListener("blur", markerToSymbol);
-                el.addEventListener("keydown", limitTextLength);
+                el.addEventListener("keydown", inputText);
                 el.addEventListener("paste", handlePaste);
-                el.addEventListener("mousedown", beginDrag);
+
+                mapCanvas.style.cursor = 'text';
 
                 el.focus();
 
-                e.originalEvent.stopImmediatePropagation();
-                e.originalEvent.stopPropagation();
             }
         }
     }
-});
+}
+
+//fire function to populate text/color custom pallete
+populatePalette();
+
+map.on('click', addEditLabels);
