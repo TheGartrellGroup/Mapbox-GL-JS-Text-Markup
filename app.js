@@ -74,6 +74,13 @@ function activateTool(el) {
     if (el.getAttribute('active') === 'true') {
         el.setAttribute('active', false);
 
+        if (el.isEqualNode(EDIT_NODE)) {
+            var activeInput = document.querySelector('.label-marker.active span');
+            if (activeInput) {
+                activeInput.focus();
+                activeInput.blur();
+            }
+        }
         MAP_DIV.style.cursor = '';
 
     } else {
@@ -240,6 +247,10 @@ function changeFontStyle(e) {
             mark.style.color = e.target.style['background-color'];
         }
     }
+
+    childSpan.focus();
+
+    MAP_DIV.style.cursor = 'text';
 }
 
 //marker move functionality - modified GL example
@@ -334,6 +345,7 @@ function addEditLabels(e) {
         }
 
         var features = map.queryRenderedFeatures(clickBBox);
+        var activeInput = document.querySelector('.marker-text-child');
 
         if (features.length) {
             var customLabels = features.filter(isCustomText);
@@ -387,8 +399,8 @@ function addEditLabels(e) {
                 el.addEventListener("blur", markerToSymbol);
                 el.addEventListener("keydown", inputText);
                 el.addEventListener("paste", handlePaste);
-
-                MAP_DIV.style.cursor = 'text';
+            } else if (activeInput) {
+                activeInput.isEqualNode(e.originalEvent.target) ? activeInput.focus() : markerToSymbol(e, activeInput);
             }
         }
     }
