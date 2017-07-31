@@ -246,9 +246,9 @@ function changeFontStyle(e) {
         } else if (e.target.classList.contains('font-color-change')) {
             mark.style.color = e.target.style['background-color'];
         }
-    }
 
-    childSpan.focus();
+        mark.focus();
+    }
 
     MAP_DIV.style.cursor = 'text';
 }
