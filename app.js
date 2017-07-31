@@ -67,7 +67,7 @@ var TEXT_COLORS = ['#000', '#C39BD3', '#76D7C4', '#DC7633'];
 var CHAR_LIMIT = 20;
 
 //label width
-var LABEL_WIDTH = '170px';
+var LABEL_WIDTH = '180px';
 
 //drag status
 var isDragging = false;
@@ -260,7 +260,10 @@ function beginDrag(e) {
     MAP_DIV.style.cursor = 'cursor:-moz-grab;cursor:-webkit-grab;cursor:grab';
 
     map.on('mousemove', onDrag);
+    map.on('touchmove', onDrag);
+
     map.once('mouseup', stopDrag);
+    map.once('touchend', stopDrag);
 }
 
 function onDrag(e) {
@@ -376,7 +379,7 @@ function addEditLabels(e) {
 
                 //drag icon - using FontAwesome as an example
                 var dragUI = document.createElement('i');
-                dragUI.className = 'fa fa-arrows-alt';
+                dragUI.className = 'fa fa-arrows-alt fa-lg drag-icon';
                 dragUI.setAttribute('aria-hidden', true);
 
                 container.appendChild(dragUI);
@@ -388,15 +391,13 @@ function addEditLabels(e) {
                 createMarker(e, container);
 
                 dragUI.addEventListener("mousedown", beginDrag);
+                dragUI.addEventListener("touchstart", beginDrag);
 
                 el.addEventListener("blur", markerToSymbol);
                 el.addEventListener("keydown", inputText);
                 el.addEventListener("paste", handlePaste);
 
                 MAP_DIV.style.cursor = 'text';
-
-                el.focus();
-
             }
         }
     }
