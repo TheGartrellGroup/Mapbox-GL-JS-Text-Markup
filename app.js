@@ -66,9 +66,6 @@ var TEXT_COLORS = ['#000', '#C39BD3', '#76D7C4', '#DC7633'];
 //char count limit
 var CHAR_LIMIT = 20;
 
-//label width
-var LABEL_WIDTH = '180px';
-
 //drag status
 var isDragging = false;
 
@@ -191,11 +188,8 @@ function handlePaste(e) {
 }
 
 function createMarker(e, el) {
-    var w = parseInt(LABEL_WIDTH.split()[0]) / -2;
 
-    new mapboxgl.Marker(el, {
-            offset:[w, -15]
-        })
+    new mapboxgl.Marker(el)
         .setLngLat(e.lngLat)
         .addTo(map);
 }
@@ -321,9 +315,7 @@ function addEditLabels(e) {
         el.setAttribute('spellcheck', 'false');
         el.setAttribute('lng', e.lngLat.lng);
         el.setAttribute('lat', e.lngLat.lat);
-
         el.style['font-size'] = TEXT_SIZES[1] + 'px';  //defaulting to second size
-        el.style.width = LABEL_WIDTH;
 
         map.marker = createMarker(e, el);
 
@@ -362,7 +354,6 @@ function addEditLabels(e) {
 
                 var container = document.createElement('div');
                 container.className = 'label-marker label-container active';
-                container.style.width = LABEL_WIDTH;
 
                 var el = document.createElement('span');
                 el.className = 'marker-text-child';
