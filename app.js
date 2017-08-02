@@ -302,8 +302,9 @@ function stopDrag(e) {
         markerToSymbol(e, textSpan);
     }, 50)
 
-    // Unbind mouse events
+    // Unbind move events
     map.off('mousemove', onDrag);
+    map.off('touchmove', onDrag);
 }
 
 function addEditLabels(e) {
@@ -399,6 +400,7 @@ function addEditLabels(e) {
                 el.addEventListener("blur", markerToSymbol);
                 el.addEventListener("keydown", inputText);
                 el.addEventListener("paste", handlePaste);
+
             } else if (activeInput) {
                 activeInput.isEqualNode(e.originalEvent.target) ? activeInput.focus() : markerToSymbol(e, activeInput);
             }
