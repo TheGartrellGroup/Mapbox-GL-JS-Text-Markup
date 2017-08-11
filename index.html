@@ -79,19 +79,23 @@
             cursor: move;
         }
 
+        #textTool, #editTextTool {
+            left: 10px;
+            height: 25px;
+            width: 120px;
+        }
+
         #textTool {
             top: 10px;
-            left: 10px;
+        }
+
+        #editTextTool {
+            top: 45px;
         }
 
         #textTool[active='true'],
         #editTextTool[active='true'] {
             background-color: #f69191;
-        }
-
-        #editTextTool {
-            top: 45px;
-            left: 10px;
         }
 
         #textTool, #editTextTool, #customTextPalette {
@@ -101,10 +105,6 @@
             border-radius: 3px;
             border: 1px solid rgba(0,0,0,0.4);
             font-family: 'Open Sans', sans-serif;
-        }
-
-        #textTool, #editTextTool {
-            width: 120px;
         }
 
         #customTextPalette {
@@ -131,8 +131,6 @@
             border-radius: 3px;
             margin: 4px 6px 0 6px;
         }
-
-
     </style>
 </head>
 <body>
