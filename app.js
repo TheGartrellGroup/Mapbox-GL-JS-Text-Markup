@@ -103,7 +103,7 @@ function generateTextID() {
 function markerToSymbol(e, elm) {
     if (isDragging) return;
 
-    MAP_DIV.style.curor = '';
+    MAP_DIV.style.cursor = '';
 
     var that = this instanceof Element ? this : elm;
     var childSpan = document.querySelector('.marker-text-child');
